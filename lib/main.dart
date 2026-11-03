@@ -1,34 +1,56 @@
+import 'package:animated_theme_switcher/animated_theme_switcher.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'signup.dart';
-import 'signin.dart';
-import 'onBoarding/onBoarding_first.dart';
-import 'onBoarding/onBoarding_sec.dart';
-import 'onBoarding/onBording_three.dart';
+import 'package:al_sharif/routing/routing.dart';
+import 'package:al_sharif/theme_app.dart';
 import 'splash_screen.dart';
 
 Future<void> main() async {
-    await Supabase.initialize(
-          url: 'https://ksxswmegevoaelgorhir.supabase.co',
-          publishableKey: 'sb_publishable_nc8ZWa9qTdK_SOifAXEpNw_2DFbKEXc',
-        );
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://dzaxbrfnzijrmcdwnxvz.supabase.co',
+    publishableKey: 'sb_publishable_ryltILM76W3XZS1jrjvhWQ_oad2Yb_V',
+  );
+
+  // نقرأ الثيم المحفوظ ونبدأ بيه
+  final prefs = await SharedPreferences.getInstance();
+  final isDark = prefs.getBool('isDark') ?? false;
+
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('ar'), Locale('en')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('ar'),
+      startLocale: const Locale('ar'),
+      child: MyApp(initTheme: isDark ? AppThemes.dark : AppThemes.light),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final ThemeData initTheme;
+  const MyApp({super.key, required this.initTheme});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const SplashScreen(),
-      routes: {
-        '/onboarding': (context) => const OnboardingOne(),
-        '/onboarding2': (context) => const OnboardingTwo(),
-        '/onboarding3': (context) => const OnboardingThree(),
-        '/signin': (context) => const LoginScreen(),
-        '/signup': (context) => const Signup(),
+    return ThemeProvider(
+      initTheme: initTheme,
+      builder: (context, theme) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          theme: theme, // الثيم الحالي بييجي من الـ provider
+          // ThemeSwitchingArea بيلف كل الصفحات (الـ Navigator)
+          builder: (context, child) => ThemeSwitchingArea(child: child!),
+          home: const SplashScreen(),
+          routes: AppRoutes.routes,
+        );
       },
     );
   }
